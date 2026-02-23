@@ -1,0 +1,22 @@
+{
+  "name": "joplin-tools",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "joplin-mcp": "./bin/joplin-mcp.sh"
+  },
+  "scripts": {
+    "start": "npx tsx src/cli.ts",
+    "demo": "npx tsx src/demo.ts",
+    "mcp": "npx tsx src/mcp-server.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "joplin-api": "^0.5.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
