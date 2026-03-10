@@ -284,12 +284,61 @@ export class JoplinClient {
   // ── Tags ────────────────────────────────────────────────────────────
 
   async listTags(): Promise<{ id: string; title: string }[]> {
-    const result = await this.request<PaginatedResponse<{ id: string; title: string }>>(
-      "/tags",
-      {},
-      { limit: "100" }
-    );
-    return result.items;
+    const all: { id: string; title: string }[] = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const result = await this.request<PaginatedResponse<{ id: string; title: string }>>(
+        "/tags",
+        {},
+        { page: String(page), limit: "100" }
+      );
+      all.push(...result.items);
+      hasMore = result.has_more;
+      page++;
+    }
+    return all;
+  }
+
+  async deleteTag(id: string): Promise<void> {
+    await this.request(`/tags/${id}`, { method: "DELETE" });
+  }
+
+  async updateTag(id: string, title: string): Promise<{ id: string; title: string }> {
+    return this.request<{ id: string; title: string }>(`/tags/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ title }),
+    });
+  }
+
+  async getTagNotes(tagId: string): Promise<JoplinNote[]> {
+    const all: JoplinNote[] = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const result = await this.request<PaginatedResponse<JoplinNote>>(
+        `/tags/${tagId}/notes`,
+        {},
+        { page: String(page), limit: "100", fields: "id,title,parent_id" }
+      );
+      all.push(...result.items);
+      hasMore = result.has_more;
+      page++;
+    }
+    return all;
+  }
+
+  async removeTagFromNote(tagId: string, noteId: string): Promise<void> {
+    await this.request(`/tags/${tagId}/notes/${noteId}`, { method: "DELETE" });
+  }
+
+  async addTagToNote(tagId: string, noteId: string): Promise<void> {
+    await this.request(`/tags/${tagId}/notes`, {
+      method: "POST",
+      body: JSON.stringify({ id: noteId }),
+    }).catch(() => {}); // Ignore if already tagged
   }
 
   async ensureTag(tagTitle: string, noteId?: string): Promise<string> {

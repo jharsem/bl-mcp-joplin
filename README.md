@@ -11,6 +11,8 @@ Gives Claude Code (or any MCP-compatible client) the ability to:
 - **List** notebooks and notes
 - **Create** notebooks (supports nested paths like `Work/Projects/Alpha`)
 - **Create** and **update** notes (Markdown, with optional tags)
+- **Tag management** — list, rename, delete, merge duplicate tags
+- **Tag notes** — add/remove tags from notes
 
 ## Prerequisites
 
@@ -84,6 +86,13 @@ Run `npx tsx src/cli.ts --help` for the full command reference.
 | `joplin_create_notebook` | Create notebook (supports nested paths) |
 | `joplin_create_note` | Create a note with optional tags |
 | `joplin_update_note` | Update a note's title/body |
+| `joplin_list_tags` | List all tags |
+| `joplin_get_tag_notes` | List notes with a specific tag |
+| `joplin_rename_tag` | Rename a tag |
+| `joplin_delete_tag` | Delete a tag (notes are kept) |
+| `joplin_tag_note` | Add a tag to a note (creates tag if needed) |
+| `joplin_untag_note` | Remove a tag from a note |
+| `joplin_merge_tags` | Merge duplicate tags into one |
 
 ## Stack
 

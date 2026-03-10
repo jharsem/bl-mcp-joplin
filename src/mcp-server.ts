@@ -127,6 +127,119 @@ server.tool(
   }
 );
 
+// ── joplin_list_tags ──────────────────────────────────────────────────
+
+server.tool(
+  "joplin_list_tags",
+  "List all tags in Joplin. Returns id and title for each tag.",
+  {},
+  async () => {
+    const tags = await client.listTags();
+    return { content: [{ type: "text" as const, text: JSON.stringify(tags, null, 2) }] };
+  }
+);
+
+// ── joplin_get_tag_notes ─────────────────────────────────────────────
+
+server.tool(
+  "joplin_get_tag_notes",
+  "List all notes that have a specific tag.",
+  { tag_id: z.string().describe("Tag ID") },
+  async ({ tag_id }) => {
+    const notes = await client.getTagNotes(tag_id);
+    return { content: [{ type: "text" as const, text: JSON.stringify(notes, null, 2) }] };
+  }
+);
+
+// ── joplin_rename_tag ────────────────────────────────────────────────
+
+server.tool(
+  "joplin_rename_tag",
+  "Rename an existing tag.",
+  {
+    tag_id: z.string().describe("Tag ID"),
+    title: z.string().describe("New tag title"),
+  },
+  async ({ tag_id, title }) => {
+    const tag = await client.updateTag(tag_id, title);
+    return { content: [{ type: "text" as const, text: JSON.stringify(tag, null, 2) }] };
+  }
+);
+
+// ── joplin_delete_tag ────────────────────────────────────────────────
+
+server.tool(
+  "joplin_delete_tag",
+  "Delete a tag entirely. Does not delete the notes, only removes the tag.",
+  { tag_id: z.string().describe("Tag ID") },
+  async ({ tag_id }) => {
+    await client.deleteTag(tag_id);
+    return { content: [{ type: "text" as const, text: "Tag deleted successfully." }] };
+  }
+);
+
+// ── joplin_tag_note ──────────────────────────────────────────────────
+
+server.tool(
+  "joplin_tag_note",
+  "Add a tag to a note. Creates the tag if it doesn't exist.",
+  {
+    tag: z.string().describe("Tag title"),
+    note_id: z.string().describe("Note ID"),
+  },
+  async ({ tag, note_id }) => {
+    const tagId = await client.ensureTag(tag, note_id);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ tag_id: tagId, note_id, tagged: true }, null, 2) }] };
+  }
+);
+
+// ── joplin_untag_note ────────────────────────────────────────────────
+
+server.tool(
+  "joplin_untag_note",
+  "Remove a tag from a note.",
+  {
+    tag_id: z.string().describe("Tag ID"),
+    note_id: z.string().describe("Note ID"),
+  },
+  async ({ tag_id, note_id }) => {
+    await client.removeTagFromNote(tag_id, note_id);
+    return { content: [{ type: "text" as const, text: "Tag removed from note." }] };
+  }
+);
+
+// ── joplin_merge_tags ────────────────────────────────────────────────
+
+server.tool(
+  "joplin_merge_tags",
+  "Merge duplicate tags: moves all notes from source tag(s) to the target tag, then deletes the source tag(s).",
+  {
+    target_tag_id: z.string().describe("Tag ID to keep"),
+    source_tag_ids: z.array(z.string()).describe("Tag IDs to merge into target and delete"),
+  },
+  async ({ target_tag_id, source_tag_ids }) => {
+    const moved: string[] = [];
+    for (const sourceId of source_tag_ids) {
+      const notes = await client.getTagNotes(sourceId);
+      for (const note of notes) {
+        await client.addTagToNote(target_tag_id, note.id);
+        moved.push(note.id);
+      }
+      await client.deleteTag(sourceId);
+    }
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          target_tag_id,
+          deleted_tags: source_tag_ids,
+          notes_retagged: moved.length,
+        }, null, 2),
+      }],
+    };
+  }
+);
+
 // ── Start ──────────────────────────────────────────────────────────────
 
 async function main() {
